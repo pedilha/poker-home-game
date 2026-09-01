@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { approveMember, rejectMember } from "./actions";
+import { approveMember, rejectMember, removeMember, setMemberRole } from "./actions";
 
 export default async function GroupPage({
   params,
@@ -45,7 +46,8 @@ export default async function GroupPage({
     );
   }
 
-  const isAdmin = myMembership.role === "owner" || myMembership.role === "admin";
+  const isOwner = myMembership.role === "owner";
+  const isAdmin = isOwner || myMembership.role === "admin";
 
   const { data: members } = await supabase
     .from("group_members")
@@ -78,6 +80,14 @@ export default async function GroupPage({
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
               Código de entrada: <strong>{group.entry_code}</strong>
             </p>
+          )}
+          {isOwner && (
+            <Link
+              href={`/groups/${group.id}/settings`}
+              className="mt-2 inline-block text-sm text-zinc-600 underline dark:text-zinc-400"
+            >
+              Configurações do grupo
+            </Link>
           )}
         </div>
 
@@ -116,17 +126,45 @@ export default async function GroupPage({
         <div className="space-y-2">
           <h2 className="text-sm font-medium text-zinc-500">Membros</h2>
           <ul className="space-y-2">
-            {approvedMembers.map((m) => (
-              <li
-                key={m.user_id}
-                className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950"
-              >
-                <span className="text-sm text-zinc-900 dark:text-zinc-50">
-                  {m.profiles?.nickname || m.profiles?.display_name}
-                </span>
-                <span className="text-xs text-zinc-500">{m.role}</span>
-              </li>
-            ))}
+            {approvedMembers.map((m) => {
+              const canRemove =
+                m.role !== "owner" &&
+                (isOwner || (myMembership.role === "admin" && m.role === "member"));
+              return (
+                <li
+                  key={m.user_id}
+                  className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950"
+                >
+                  <span className="text-sm text-zinc-900 dark:text-zinc-50">
+                    {m.profiles?.nickname || m.profiles?.display_name}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-500">{m.role}</span>
+                    {isOwner && m.role !== "owner" && (
+                      <form
+                        action={setMemberRole.bind(
+                          null,
+                          group.id,
+                          m.user_id,
+                          m.role === "admin" ? "member" : "admin",
+                        )}
+                      >
+                        <button className="rounded-full border border-zinc-300 px-2 py-1 text-xs text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
+                          {m.role === "admin" ? "Tornar membro" : "Tornar admin"}
+                        </button>
+                      </form>
+                    )}
+                    {canRemove && (
+                      <form action={removeMember.bind(null, group.id, m.user_id)}>
+                        <button className="rounded-full border border-zinc-300 px-2 py-1 text-xs text-red-600 dark:border-zinc-700 dark:text-red-400">
+                          Remover
+                        </button>
+                      </form>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>

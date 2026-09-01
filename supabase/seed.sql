@@ -30,8 +30,9 @@ begin
     ('00000000-0000-0000-0000-000000000000', v_vitor, 'authenticated', 'authenticated', 'vitor@example.com', crypt('password123', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{"full_name":"Vitor"}');
 
   -- grupo (o trigger on_group_created já aprova o Pedro como owner em group_members)
-  insert into public.groups (name, entry_code, owner_id, default_buyin_value)
-  values ('Sexta do Pedro', 'SEXTA01', v_pedro, 50.00)
+  -- valor da unidade = R$0,10, cada cor vale um número de unidades
+  insert into public.groups (name, entry_code, owner_id, default_buyin_value, chip_unit_value)
+  values ('Sexta do Pedro', 'SEXTA01', v_pedro, 50.00, 0.10)
   returning id into v_group;
 
   insert into public.group_members (group_id, user_id, role, status) values
@@ -39,22 +40,23 @@ begin
     (v_group, v_chris, 'member', 'approved'),
     (v_group, v_vitor, 'member', 'approved');
 
-  insert into public.group_chip_colors (group_id, color_name, color_hex, chip_count, unit_value, sort_order) values
-    (v_group, 'Branca', '#f5f5f5', 100, 0.40, 1),
-    (v_group, 'Vermelha', '#dc2626', 60, 1.00, 2),
-    (v_group, 'Azul', '#2563eb', 40, 5.00, 3),
-    (v_group, 'Verde', '#16a34a', 20, 25.00, 4);
+  -- Branca = 4un (R$0,40) | Vermelha = 10un (R$1,00) | Azul = 50un (R$5,00) | Verde = 250un (R$25,00)
+  insert into public.group_chip_colors (group_id, color_name, color_hex, units, sort_order) values
+    (v_group, 'Branca', '#f5f5f5', 4, 1),
+    (v_group, 'Vermelha', '#dc2626', 10, 2),
+    (v_group, 'Azul', '#2563eb', 50, 3),
+    (v_group, 'Verde', '#16a34a', 250, 4);
 
   -- partida fechada, com divergência proposital (para exercitar o fluxo de conciliação)
-  insert into public.matches (group_id, leader_id, buyin_value, status, is_divergent, divergence_amount, created_at, closed_at)
-  values (v_group, v_pedro, 50.00, 'closed', true, 55.00, now() - interval '2 hours', now())
+  insert into public.matches (group_id, leader_id, buyin_value, chip_unit_value, status, is_divergent, divergence_amount, created_at, closed_at)
+  values (v_group, v_pedro, 50.00, 0.10, 'closed', true, 55.00, now() - interval '2 hours', now())
   returning id into v_match;
 
-  insert into public.match_chip_snapshot (match_id, color_name, color_hex, unit_value, sort_order) values
-    (v_match, 'Branca', '#f5f5f5', 0.40, 1),
-    (v_match, 'Vermelha', '#dc2626', 1.00, 2),
-    (v_match, 'Azul', '#2563eb', 5.00, 3),
-    (v_match, 'Verde', '#16a34a', 25.00, 4);
+  insert into public.match_chip_snapshot (match_id, color_name, color_hex, units, sort_order) values
+    (v_match, 'Branca', '#f5f5f5', 4, 1),
+    (v_match, 'Vermelha', '#dc2626', 10, 2),
+    (v_match, 'Azul', '#2563eb', 50, 3),
+    (v_match, 'Verde', '#16a34a', 250, 4);
 
   select id into v_white from public.match_chip_snapshot where match_id = v_match and color_name = 'Branca';
   select id into v_red from public.match_chip_snapshot where match_id = v_match and color_name = 'Vermelha';
@@ -80,8 +82,8 @@ begin
     (v_p_vitor, 'buy_in', 50.00, v_pedro),
     (v_p_vitor, 'rebuy', 50.00, v_pedro);
 
-  -- Pedro: green*8 + red*10 = 210 | Tarcísio: green*3 + blue*3 = 90
-  -- Chris: blue*8 = 40           | Vitor: green*4 + blue*3 = 115
+  -- Pedro: verde*8 (200) + vermelha*10 (10) = 210 | Tarcísio: verde*3 (75) + azul*3 (15) = 90
+  -- Chris: azul*8 = 40                            | Vitor: verde*4 (100) + azul*3 (15) = 115
   insert into public.declarations (participation_id, match_chip_snapshot_id, chip_count) values
     (v_p_pedro, v_green, 8), (v_p_pedro, v_red, 10),
     (v_p_tarcisio, v_green, 3), (v_p_tarcisio, v_blue, 3),
