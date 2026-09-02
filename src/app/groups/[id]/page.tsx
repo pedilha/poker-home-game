@@ -101,6 +101,12 @@ export default async function GroupPage({
             >
               Histórico
             </Link>
+            <Link
+              href={`/groups/${group.id}/calculator`}
+              className="text-zinc-600 underline dark:text-zinc-400"
+            >
+              Calculadora
+            </Link>
             {isOwner && (
               <Link
                 href={`/groups/${group.id}/settings`}
