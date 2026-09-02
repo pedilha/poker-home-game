@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Plus, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { Badge, Card, EmptyState, LinkButton, PageContainer } from "@/components/ui";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -18,77 +20,67 @@ export default async function Home() {
 
   const approved = (memberships ?? []).filter((m) => m.status === "approved");
   const pending = (memberships ?? []).filter((m) => m.status === "pending");
+  const hasGroups = approved.length > 0 || pending.length > 0;
 
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 px-4 py-10 dark:bg-black">
-      <div className="mx-auto w-full max-w-sm space-y-8">
-        <h1 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
-          Seus grupos
-        </h1>
-
-        {approved.length === 0 && pending.length === 0 ? (
-          <div className="space-y-4 text-center">
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Você ainda não faz parte de nenhum grupo.
-            </p>
-            <div className="flex flex-col gap-3">
-              <Link
-                href="/groups/new"
-                className="flex h-11 items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-              >
-                Criar grupo
-              </Link>
-              <Link
-                href="/groups/join"
-                className="flex h-11 items-center justify-center rounded-full border border-zinc-300 px-5 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-50 dark:hover:bg-zinc-900"
-              >
-                Entrar com código
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <>
-            <ul className="space-y-2">
-              {approved.map((m) =>
-                m.groups ? (
-                  <li key={m.groups.id}>
-                    <Link
-                      href={`/groups/${m.groups.id}`}
-                      className="flex h-14 items-center rounded-2xl border border-zinc-200 bg-white px-5 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
-                    >
-                      {m.groups.name}
-                    </Link>
-                  </li>
-                ) : null,
-              )}
-            </ul>
-
-            {pending.length > 0 && (
-              <ul className="space-y-2">
-                {pending.map((m) =>
-                  m.groups ? (
-                    <li
-                      key={m.groups.id}
-                      className="flex h-14 items-center rounded-2xl border border-dashed border-zinc-300 px-5 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"
-                    >
-                      {m.groups.name} — aguardando aprovação
-                    </li>
-                  ) : null,
-                )}
-              </ul>
-            )}
-
-            <div className="flex gap-3 text-sm font-medium">
-              <Link href="/groups/new" className="text-zinc-600 underline dark:text-zinc-400">
-                Criar grupo
-              </Link>
-              <Link href="/groups/join" className="text-zinc-600 underline dark:text-zinc-400">
-                Entrar com código
-              </Link>
-            </div>
-          </>
-        )}
+    <PageContainer>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-foreground">Seus grupos</h1>
+        {hasGroups ? (
+          <LinkButton href="/groups/new" variant="outline" size="sm">
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Criar
+          </LinkButton>
+        ) : null}
       </div>
-    </div>
+
+      {!hasGroups ? (
+        <EmptyState
+          title="Você ainda não faz parte de nenhum grupo"
+          description="Crie um grupo novo ou entre em um usando o código de entrada."
+          action={
+            <div className="flex w-full flex-col gap-3 pt-2">
+              <LinkButton href="/groups/new" fullWidth>
+                Criar grupo
+              </LinkButton>
+              <LinkButton href="/groups/join" variant="outline" fullWidth>
+                Entrar com código
+              </LinkButton>
+            </div>
+          }
+        />
+      ) : (
+        <>
+          <ul className="space-y-2">
+            {approved.map((m) =>
+              m.groups ? (
+                <li key={m.groups.id}>
+                  <Link href={`/groups/${m.groups.id}`}>
+                    <Card className="flex h-14 items-center gap-3 px-5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover">
+                      <Users className="h-4 w-4 text-muted" aria-hidden="true" />
+                      {m.groups.name}
+                    </Card>
+                  </Link>
+                </li>
+              ) : null,
+            )}
+            {pending.map((m) =>
+              m.groups ? (
+                <li key={m.groups.id}>
+                  <Card className="flex h-14 items-center justify-between border-dashed px-5 text-sm text-muted">
+                    {m.groups.name}
+                    <Badge variant="warning">aguardando</Badge>
+                  </Card>
+                </li>
+              ) : null,
+            )}
+          </ul>
+
+          <LinkButton href="/groups/join" variant="ghost" size="sm">
+            Entrar em outro grupo com código
+          </LinkButton>
+        </>
+      )}
+    </PageContainer>
   );
 }

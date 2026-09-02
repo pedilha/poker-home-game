@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -8,6 +7,7 @@ import {
   updateChipUnitValue,
 } from "./actions";
 import AddChipColorForm from "./AddChipColorForm";
+import { Button, Card, Input, PageContainer, PageHeader } from "@/components/ui";
 
 export default async function GroupSettingsPage({
   params,
@@ -40,126 +40,100 @@ export default async function GroupSettingsPage({
     >();
 
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 px-4 py-10 dark:bg-black">
-      <div className="mx-auto w-full max-w-sm space-y-8">
-        <div>
-          <Link
-            href={`/groups/${group.id}`}
-            className="text-sm text-zinc-600 underline dark:text-zinc-400"
-          >
-            ← Voltar para {group.name}
-          </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
-            Configurações — {group.name}
-          </h1>
-        </div>
+    <PageContainer>
+      <PageHeader
+        title="Configurações"
+        subtitle={group.name}
+        backHref={`/groups/${group.id}`}
+        backLabel={`Voltar para ${group.name}`}
+      />
 
-        <div className="space-y-2">
-          <h2 className="text-sm font-medium text-zinc-500">Buy-in padrão</h2>
-          <form
-            action={updateBuyinValue.bind(null, group.id)}
-            className="flex gap-2"
-          >
-            <input
-              type="text"
-              inputMode="decimal"
-              name="default_buyin_value"
-              required
-              defaultValue={group.default_buyin_value}
-              className="h-11 w-full rounded-full border border-zinc-300 bg-white px-5 text-sm text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-            />
-            <button className="h-11 rounded-full border border-zinc-300 px-4 text-sm font-medium text-zinc-900 dark:border-zinc-700 dark:text-zinc-50">
-              Salvar
-            </button>
-          </form>
+      <form action={updateBuyinValue.bind(null, group.id)} className="flex items-end gap-2">
+        <div className="flex-1">
+          <Input
+            type="text"
+            inputMode="decimal"
+            name="default_buyin_value"
+            label="Buy-in padrão (R$)"
+            required
+            defaultValue={group.default_buyin_value}
+          />
         </div>
+        <Button variant="outline">Salvar</Button>
+      </form>
 
-        <div className="space-y-2">
-          <h2 className="text-sm font-medium text-zinc-500">
-            Valor da unidade
-          </h2>
-          <p className="text-xs text-zinc-500">
-            Cada cor de ficha vale um número de unidades — mude esse valor
-            pra reprecificar o set inteiro de uma vez.
-          </p>
-          <form
-            action={updateChipUnitValue.bind(null, group.id)}
-            className="flex gap-2"
-          >
-            <input
+      <div className="space-y-2">
+        <form action={updateChipUnitValue.bind(null, group.id)} className="flex items-end gap-2">
+          <div className="flex-1">
+            <Input
               type="text"
               inputMode="decimal"
               name="chip_unit_value"
+              label="Valor da unidade (R$)"
               required
               defaultValue={group.chip_unit_value}
-              className="h-11 w-full rounded-full border border-zinc-300 bg-white px-5 text-sm text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+              hint="Cada cor vale um número de unidades — mude esse valor pra reprecificar o set inteiro de uma vez."
             />
-            <button className="h-11 rounded-full border border-zinc-300 px-4 text-sm font-medium text-zinc-900 dark:border-zinc-700 dark:text-zinc-50">
-              Salvar
-            </button>
-          </form>
-        </div>
+          </div>
+          <Button variant="outline">Salvar</Button>
+        </form>
+      </div>
 
-        <div className="space-y-2">
-          <h2 className="text-sm font-medium text-zinc-500">
-            Cores de fichas
-          </h2>
-          <ul className="space-y-2">
-            {(colors ?? []).map((c) => (
-              <li
-                key={c.id}
-                className="space-y-2 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+      <div className="space-y-2">
+        <h2 className="text-sm font-medium text-muted">Cores de fichas</h2>
+        <ul className="space-y-2">
+          {(colors ?? []).map((c) => (
+            <Card as="li" key={c.id} className="space-y-2 p-4">
+              <form
+                action={updateChipColor.bind(null, group.id, c.id)}
+                className="flex items-center gap-2"
               >
-                <form
-                  action={updateChipColor.bind(null, group.id, c.id)}
-                  className="flex items-center gap-2"
-                >
-                  <input
-                    type="color"
-                    name="color_hex"
-                    defaultValue={c.color_hex ?? "#e5e5e5"}
-                    className="h-9 w-9 shrink-0 rounded-full border border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900"
-                  />
-                  <input
-                    type="text"
-                    name="color_name"
-                    defaultValue={c.color_name}
-                    className="h-9 w-full rounded-full border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                  />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    name="units"
-                    defaultValue={c.units}
-                    className="h-9 w-20 rounded-full border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                  />
-                  <button className="h-9 shrink-0 rounded-full border border-zinc-300 px-3 text-xs font-medium text-zinc-900 dark:border-zinc-700 dark:text-zinc-50">
-                    Salvar
+                <input
+                  type="color"
+                  name="color_hex"
+                  aria-label="Cor"
+                  defaultValue={c.color_hex ?? "#e5e5e5"}
+                  className="h-9 w-9 shrink-0 rounded-full border border-border bg-surface"
+                />
+                <input
+                  type="text"
+                  name="color_name"
+                  aria-label="Nome da cor"
+                  defaultValue={c.color_name}
+                  className="h-9 w-full rounded-xl border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-primary"
+                />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  name="units"
+                  aria-label="Unidades"
+                  defaultValue={c.units}
+                  className="h-9 w-16 shrink-0 rounded-xl border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-primary"
+                />
+                <Button size="sm" variant="secondary" className="shrink-0">
+                  Salvar
+                </Button>
+              </form>
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs text-muted">
+                  {c.units} un × R$ {group.chip_unit_value} = R${" "}
+                  {(c.units * group.chip_unit_value).toFixed(2)}
+                </span>
+                <form action={deleteChipColor.bind(null, group.id, c.id)}>
+                  <button className="cursor-pointer text-xs text-danger transition-colors hover:underline">
+                    Remover
                   </button>
                 </form>
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs text-zinc-500">
-                    {c.units} un × R$ {group.chip_unit_value} = R${" "}
-                    {(c.units * group.chip_unit_value).toFixed(2)}
-                  </span>
-                  <form action={deleteChipColor.bind(null, group.id, c.id)}>
-                    <button className="text-xs text-red-600 dark:text-red-400">
-                      Remover
-                    </button>
-                  </form>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="space-y-2">
-          <h2 className="text-sm font-medium text-zinc-500">
-            Adicionar cor
-          </h2>
-          <AddChipColorForm groupId={group.id} />
-        </div>
+              </div>
+            </Card>
+          ))}
+        </ul>
       </div>
-    </div>
+
+      <div className="space-y-2">
+        <h2 className="text-sm font-medium text-muted">Adicionar cor</h2>
+        <AddChipColorForm groupId={group.id} />
+      </div>
+    </PageContainer>
   );
 }

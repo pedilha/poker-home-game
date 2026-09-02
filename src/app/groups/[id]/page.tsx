@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Calculator, History, Settings, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { approveMember, rejectMember, removeMember, setMemberRole } from "./actions";
+import { Badge, Button, Card, LinkButton, PageContainer } from "@/components/ui";
 
 export default async function GroupPage({
   params,
@@ -34,11 +35,9 @@ export default async function GroupPage({
 
   if (myMembership.status === "pending") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center bg-zinc-50 px-4 text-center dark:bg-black">
-        <h1 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
-          {group.name}
-        </h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+      <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
+        <h1 className="text-xl font-semibold text-foreground">{group.name}</h1>
+        <p className="mt-2 text-sm text-muted">
           Sua solicitação de entrada está aguardando aprovação do dono ou de
           um admin.
         </p>
@@ -73,146 +72,128 @@ export default async function GroupPage({
   const approvedMembers = (members ?? []).filter((m) => m.status === "approved");
   const pendingMembers = (members ?? []).filter((m) => m.status === "pending");
 
+  const navTiles = [
+    { href: `/groups/${group.id}/ranking`, label: "Ranking", icon: Trophy },
+    { href: `/groups/${group.id}/history`, label: "Histórico", icon: History },
+    { href: `/groups/${group.id}/calculator`, label: "Calculadora", icon: Calculator },
+    ...(isOwner
+      ? [{ href: `/groups/${group.id}/settings`, label: "Config.", icon: Settings }]
+      : []),
+  ];
+
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 px-4 py-10 dark:bg-black">
-      <div className="mx-auto w-full max-w-sm space-y-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
-            {group.name}
-          </h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Buy-in padrão: R$ {group.default_buyin_value}
+    <PageContainer>
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">{group.name}</h1>
+        <p className="mt-1 text-sm text-muted">
+          Buy-in padrão: R$ {group.default_buyin_value}
+        </p>
+        {isAdmin && (
+          <p className="mt-1 text-sm text-muted">
+            Código de entrada:{" "}
+            <span className="font-mono font-semibold text-foreground">
+              {group.entry_code}
+            </span>
           </p>
-          {isAdmin && (
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Código de entrada: <strong>{group.entry_code}</strong>
-            </p>
-          )}
-          <div className="mt-2 flex gap-3 text-sm">
-            <Link
-              href={`/groups/${group.id}/ranking`}
-              className="text-zinc-600 underline dark:text-zinc-400"
-            >
-              Ranking
-            </Link>
-            <Link
-              href={`/groups/${group.id}/history`}
-              className="text-zinc-600 underline dark:text-zinc-400"
-            >
-              Histórico
-            </Link>
-            <Link
-              href={`/groups/${group.id}/calculator`}
-              className="text-zinc-600 underline dark:text-zinc-400"
-            >
-              Calculadora
-            </Link>
-            {isOwner && (
-              <Link
-                href={`/groups/${group.id}/settings`}
-                className="text-zinc-600 underline dark:text-zinc-400"
-              >
-                Configurações
-              </Link>
-            )}
-          </div>
-        </div>
-
-        <div>
-          {openMatch ? (
-            <Link
-              href={`/groups/${group.id}/matches/${openMatch.id}`}
-              className="flex h-11 w-full items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-            >
-              Ver partida ativa
-            </Link>
-          ) : (
-            <Link
-              href={`/groups/${group.id}/matches/new`}
-              className="flex h-11 w-full items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-            >
-              Iniciar partida
-            </Link>
-          )}
-        </div>
-
-        {isAdmin && pendingMembers.length > 0 && (
-          <div className="space-y-2">
-            <h2 className="text-sm font-medium text-zinc-500">
-              Solicitações pendentes
-            </h2>
-            <ul className="space-y-2">
-              {pendingMembers.map((m) => (
-                <li
-                  key={m.user_id}
-                  className="flex items-center justify-between rounded-2xl border border-dashed border-zinc-300 px-4 py-3 dark:border-zinc-700"
-                >
-                  <span className="text-sm text-zinc-900 dark:text-zinc-50">
-                    {m.profiles?.nickname || m.profiles?.display_name}
-                  </span>
-                  <span className="flex gap-2">
-                    <form action={approveMember.bind(null, group.id, m.user_id)}>
-                      <button className="rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background">
-                        Aprovar
-                      </button>
-                    </form>
-                    <form action={rejectMember.bind(null, group.id, m.user_id)}>
-                      <button className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
-                        Recusar
-                      </button>
-                    </form>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
         )}
+      </div>
 
+      <div className={`grid gap-2 ${navTiles.length === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
+        {navTiles.map((tile) => (
+          <LinkButton
+            key={tile.href}
+            href={tile.href}
+            variant="outline"
+            className="h-auto flex-col gap-1.5 rounded-2xl py-3 text-xs"
+          >
+            <tile.icon className="h-4 w-4" aria-hidden="true" />
+            {tile.label}
+          </LinkButton>
+        ))}
+      </div>
+
+      {openMatch ? (
+        <LinkButton href={`/groups/${group.id}/matches/${openMatch.id}`} fullWidth>
+          Ver partida ativa
+        </LinkButton>
+      ) : (
+        <LinkButton href={`/groups/${group.id}/matches/new`} fullWidth>
+          Iniciar partida
+        </LinkButton>
+      )}
+
+      {isAdmin && pendingMembers.length > 0 && (
         <div className="space-y-2">
-          <h2 className="text-sm font-medium text-zinc-500">Membros</h2>
+          <h2 className="text-sm font-medium text-muted">Solicitações pendentes</h2>
           <ul className="space-y-2">
-            {approvedMembers.map((m) => {
-              const canRemove =
-                m.role !== "owner" &&
-                (isOwner || (myMembership.role === "admin" && m.role === "member"));
-              return (
-                <li
-                  key={m.user_id}
-                  className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950"
-                >
-                  <span className="text-sm text-zinc-900 dark:text-zinc-50">
-                    {m.profiles?.nickname || m.profiles?.display_name}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-500">{m.role}</span>
-                    {isOwner && m.role !== "owner" && (
-                      <form
-                        action={setMemberRole.bind(
-                          null,
-                          group.id,
-                          m.user_id,
-                          m.role === "admin" ? "member" : "admin",
-                        )}
-                      >
-                        <button className="rounded-full border border-zinc-300 px-2 py-1 text-xs text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
-                          {m.role === "admin" ? "Tornar membro" : "Tornar admin"}
-                        </button>
-                      </form>
-                    )}
-                    {canRemove && (
-                      <form action={removeMember.bind(null, group.id, m.user_id)}>
-                        <button className="rounded-full border border-zinc-300 px-2 py-1 text-xs text-red-600 dark:border-zinc-700 dark:text-red-400">
-                          Remover
-                        </button>
-                      </form>
-                    )}
-                  </span>
-                </li>
-              );
-            })}
+            {pendingMembers.map((m) => (
+              <Card
+                as="li"
+                key={m.user_id}
+                className="flex items-center justify-between border-dashed px-4 py-3"
+              >
+                <span className="text-sm text-foreground">
+                  {m.profiles?.nickname || m.profiles?.display_name}
+                </span>
+                <span className="flex gap-2">
+                  <form action={approveMember.bind(null, group.id, m.user_id)}>
+                    <Button size="sm">Aprovar</Button>
+                  </form>
+                  <form action={rejectMember.bind(null, group.id, m.user_id)}>
+                    <Button variant="outline" size="sm">
+                      Recusar
+                    </Button>
+                  </form>
+                </span>
+              </Card>
+            ))}
           </ul>
         </div>
+      )}
+
+      <div className="space-y-2">
+        <h2 className="text-sm font-medium text-muted">Membros</h2>
+        <ul className="space-y-2">
+          {approvedMembers.map((m) => {
+            const canRemove =
+              m.role !== "owner" &&
+              (isOwner || (myMembership.role === "admin" && m.role === "member"));
+            return (
+              <Card as="li" key={m.user_id} className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm text-foreground">
+                  {m.profiles?.nickname || m.profiles?.display_name}
+                </span>
+                <span className="flex items-center gap-2">
+                  <Badge variant={m.role === "owner" ? "success" : "neutral"}>
+                    {m.role}
+                  </Badge>
+                  {isOwner && m.role !== "owner" && (
+                    <form
+                      action={setMemberRole.bind(
+                        null,
+                        group.id,
+                        m.user_id,
+                        m.role === "admin" ? "member" : "admin",
+                      )}
+                    >
+                      <Button variant="outline" size="sm">
+                        {m.role === "admin" ? "Tornar membro" : "Tornar admin"}
+                      </Button>
+                    </form>
+                  )}
+                  {canRemove && (
+                    <form action={removeMember.bind(null, group.id, m.user_id)}>
+                      <Button variant="danger" size="sm">
+                        Remover
+                      </Button>
+                    </form>
+                  )}
+                </span>
+              </Card>
+            );
+          })}
+        </ul>
       </div>
-    </div>
+    </PageContainer>
   );
 }

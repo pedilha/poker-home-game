@@ -1,11 +1,13 @@
 "use client";
 
 import { useActionState } from "react";
+import { AlertTriangle } from "lucide-react";
 import {
   closeMatch,
   closeWithProportionalCorrection,
   type CloseMatchResult,
 } from "./actions";
+import { Button, Card } from "@/components/ui";
 
 export default function CloseMatchPanel({
   groupId,
@@ -21,36 +23,41 @@ export default function CloseMatchPanel({
 
   if (state && !state.closed && "isDivergent" in state) {
     return (
-      <div className="space-y-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950">
-        <p className="text-amber-900 dark:text-amber-100">
-          Total investido: R$ {state.totalInvested.toFixed(2)} — Total
-          declarado: R$ {state.totalDeclared.toFixed(2)}. Diferença de R${" "}
-          {Math.abs(state.divergenceAmount).toFixed(2)}.
+      <Card className="space-y-3 border-warning/30 bg-warning-surface p-4 text-sm">
+        <p className="flex items-start gap-2 text-warning">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>
+            Total investido: R$ {state.totalInvested.toFixed(2)} — Total
+            declarado: R$ {state.totalDeclared.toFixed(2)}. Diferença de R${" "}
+            {Math.abs(state.divergenceAmount).toFixed(2)}.
+          </span>
         </p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <form
             action={closeWithProportionalCorrection.bind(null, groupId, matchId)}
             className="flex-1"
           >
-            <button className="flex h-10 w-full items-center justify-center rounded-full bg-foreground px-4 text-xs font-medium text-background">
+            <Button size="sm" fullWidth>
               Fechar com correção proporcional
-            </button>
+            </Button>
           </form>
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
+            fullWidth
             onClick={() => window.location.reload()}
-            className="flex h-10 w-full items-center justify-center rounded-full border border-zinc-300 px-4 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
           >
             Corrigir declarações
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (state && !state.closed && "pendingDeclarations" in state) {
     return (
-      <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-center text-sm text-muted">
         Faltam {state.pendingDeclarations} jogador(es) declarar antes de
         fechar.
       </p>
@@ -59,13 +66,9 @@ export default function CloseMatchPanel({
 
   return (
     <form action={formAction}>
-      <button
-        type="submit"
-        disabled={pending}
-        className="flex h-11 w-full items-center justify-center rounded-full border border-zinc-300 px-5 text-sm font-medium text-zinc-900 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-50"
-      >
+      <Button type="submit" variant="outline" fullWidth disabled={pending}>
         {pending ? "Verificando..." : "Fechar partida"}
-      </button>
+      </Button>
     </form>
   );
 }
