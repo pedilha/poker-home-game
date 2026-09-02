@@ -88,14 +88,28 @@ export default async function GroupPage({
               Código de entrada: <strong>{group.entry_code}</strong>
             </p>
           )}
-          {isOwner && (
+          <div className="mt-2 flex gap-3 text-sm">
             <Link
-              href={`/groups/${group.id}/settings`}
-              className="mt-2 inline-block text-sm text-zinc-600 underline dark:text-zinc-400"
+              href={`/groups/${group.id}/ranking`}
+              className="text-zinc-600 underline dark:text-zinc-400"
             >
-              Configurações do grupo
+              Ranking
             </Link>
-          )}
+            <Link
+              href={`/groups/${group.id}/history`}
+              className="text-zinc-600 underline dark:text-zinc-400"
+            >
+              Histórico
+            </Link>
+            {isOwner && (
+              <Link
+                href={`/groups/${group.id}/settings`}
+                className="text-zinc-600 underline dark:text-zinc-400"
+              >
+                Configurações
+              </Link>
+            )}
+          </div>
         </div>
 
         <div>
