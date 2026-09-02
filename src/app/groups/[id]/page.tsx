@@ -49,6 +49,13 @@ export default async function GroupPage({
   const isOwner = myMembership.role === "owner";
   const isAdmin = isOwner || myMembership.role === "admin";
 
+  const { data: openMatch } = await supabase
+    .from("matches")
+    .select("id")
+    .eq("group_id", id)
+    .eq("status", "open")
+    .maybeSingle();
+
   const { data: members } = await supabase
     .from("group_members")
     .select("user_id, role, status, profiles(display_name, nickname)")
@@ -87,6 +94,24 @@ export default async function GroupPage({
               className="mt-2 inline-block text-sm text-zinc-600 underline dark:text-zinc-400"
             >
               Configurações do grupo
+            </Link>
+          )}
+        </div>
+
+        <div>
+          {openMatch ? (
+            <Link
+              href={`/groups/${group.id}/matches/${openMatch.id}`}
+              className="flex h-11 w-full items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+            >
+              Ver partida ativa
+            </Link>
+          ) : (
+            <Link
+              href={`/groups/${group.id}/matches/new`}
+              className="flex h-11 w-full items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+            >
+              Iniciar partida
             </Link>
           )}
         </div>
