@@ -16,14 +16,14 @@ export default function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {backHref ? (
         <Link
           href={backHref}
-          className="inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-foreground"
+          aria-label={backLabel}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          {backLabel}
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </Link>
       ) : null}
       <div className="flex items-start justify-between gap-3">

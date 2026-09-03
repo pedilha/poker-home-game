@@ -7,3 +7,4 @@ export { default as PageHeader } from "./PageHeader";
 export { default as EmptyState } from "./EmptyState";
 export { default as PageContainer } from "./PageContainer";
 export { default as GoogleIcon } from "./GoogleIcon";
+export { default as Avatar } from "./Avatar";

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Card, EmptyState, PageContainer, PageHeader } from "@/components/ui";
+import GroupBottomNav from "@/components/GroupBottomNav";
+import { Badge, Card, EmptyState, PageContainer } from "@/components/ui";
 
 export default async function HistoryPage({
   params,
@@ -47,12 +48,11 @@ export default async function HistoryPage({
     >();
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="Histórico de partidas"
-        backHref={`/groups/${id}`}
-        backLabel={`Voltar para ${group.name}`}
-      />
+    <PageContainer bottomNav nav={<GroupBottomNav groupId={id} />}>
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">Histórico</h1>
+        <p className="mt-1 text-sm text-muted">{group.name}</p>
+      </div>
 
       {!matches || matches.length === 0 ? (
         <EmptyState

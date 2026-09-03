@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafafa;
-  --surface: #ffffff;
-  --surface-hover: #f4f4f5;
-  --border: #e4e4e7;
+  --background: #cdeeda;
+  --surface: #dff5e7;
+  --surface-hover: #d2eedd;
+  --border: #8fd3a8;
   --foreground: #0f172a;
   --muted: #475569;
   --primary: #16a34a;
   --primary-foreground: #ffffff;
+  --success: #16a34a;
   --danger: #dc2626;
   --danger-surface: #fef2f2;
   --warning: #b45309;
@@ -24,6 +25,7 @@
   --color-muted: var(--muted);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-success: var(--success);
   --color-danger: var(--danger);
   --color-danger-surface: var(--danger-surface);
   --color-warning: var(--warning);
@@ -32,28 +34,153 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0b1120;
-    --surface: #131b2e;
-    --surface-hover: #1b2438;
-    --border: #253046;
-    --foreground: #f8fafc;
-    --muted: #94a3b8;
-    --primary: #22c55e;
-    --primary-foreground: #052e13;
-    --danger: #f87171;
-    --danger-surface: #2a1417;
-    --warning: #fbbf24;
-    --warning-surface: #2a2113;
-  }
-}
-
 * {
   border-color: var(--border);
+}
+
+html {
+  scrollbar-gutter: stable;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* ============================================================
+   Modo claro/escuro — explícito (escolha do usuário, não segue o
+   sistema operacional). O fundo é sempre uma cor com tonalidade
+   (tipo feltro de mesa), nunca branco puro — os cards (superfície)
+   ficam brancos/escuros por cima, como uma carta sobre a mesa.
+   Base = tema Verde (emerald); as paletas abaixo sobrescrevem
+   fundo/superfície/borda/cor primária.
+   ============================================================ */
+
+:root[data-mode="light"] {
+  --background: #cdeeda;
+  --surface: #dff5e7;
+  --surface-hover: #d2eedd;
+  --border: #8fd3a8;
+  --foreground: #0f172a;
+  --muted: #475569;
+  --primary: #16a34a;
+  --primary-foreground: #ffffff;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --danger-surface: #fef2f2;
+  --warning: #b45309;
+  --warning-surface: #fffbeb;
+}
+
+:root[data-mode="dark"] {
+  --background: #06281f;
+  --surface: #0f3a2c;
+  --surface-hover: #144635;
+  --border: #1a5942;
+  --foreground: #f0fdf6;
+  --muted: #9fc4b0;
+  --primary: #22c55e;
+  --primary-foreground: #052e13;
+  --success: #22c55e;
+  --danger: #f87171;
+  --danger-surface: #2a1417;
+  --warning: #fbbf24;
+  --warning-surface: #2a2113;
+}
+
+/* ==== Paletas de tema (feltro + cor de destaque), por modo ==== */
+
+:root[data-theme="royal"][data-mode="light"] {
+  --background: #c3d9f7;
+  --surface: #d7e7fb;
+  --surface-hover: #cadff9;
+  --border: #7fa8ea;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+}
+:root[data-theme="royal"][data-mode="dark"] {
+  --background: #0a1d3d;
+  --surface: #12294f;
+  --surface-hover: #17335e;
+  --border: #1e3a63;
+  --foreground: #eef4ff;
+  --muted: #9bb2d9;
+  --primary: #3b82f6;
+  --primary-foreground: #051a3d;
+}
+
+:root[data-theme="blood"][data-mode="light"] {
+  --background: #f7cbcb;
+  --surface: #fadfdf;
+  --surface-hover: #f8d5d5;
+  --border: #ea8f8f;
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+}
+:root[data-theme="blood"][data-mode="dark"] {
+  --background: #2b0a0a;
+  --surface: #3d1212;
+  --surface-hover: #4a1616;
+  --border: #5c1c1c;
+  --foreground: #fdf0f0;
+  --muted: #cc9d9d;
+  --primary: #ef4444;
+  --primary-foreground: #450a0a;
+}
+
+:root[data-theme="gold"][data-mode="light"] {
+  --background: #f5e2ab;
+  --surface: #f8ecc4;
+  --surface-hover: #f6e6b8;
+  --border: #e0bd5c;
+  --primary: #b45309;
+  --primary-foreground: #ffffff;
+}
+:root[data-theme="gold"][data-mode="dark"] {
+  --background: #241a0a;
+  --surface: #332510;
+  --surface-hover: #3f2e14;
+  --border: #4d3818;
+  --foreground: #fdf6e8;
+  --muted: #cbb789;
+  --primary: #facc15;
+  --primary-foreground: #422006;
+}
+
+:root[data-theme="violet"][data-mode="light"] {
+  --background: #e3d3f5;
+  --surface: #ecdff9;
+  --surface-hover: #e7d9f7;
+  --border: #b98cea;
+  --primary: #7e22ce;
+  --primary-foreground: #ffffff;
+}
+:root[data-theme="violet"][data-mode="dark"] {
+  --background: #1e0a33;
+  --surface: #2c1247;
+  --surface-hover: #371758;
+  --border: #401c66;
+  --foreground: #f6f0fb;
+  --muted: #bda2d4;
+  --primary: #a855f7;
+  --primary-foreground: #2e1065;
+}
+
+:root[data-theme="dark"][data-mode="light"] {
+  --background: #d4d4d8;
+  --surface: #e2e2e5;
+  --surface-hover: #dadadd;
+  --border: #9f9fa6;
+  --primary: #27272a;
+  --primary-foreground: #ffffff;
+}
+:root[data-theme="dark"][data-mode="dark"] {
+  --background: #131315;
+  --surface: #1e1e21;
+  --surface-hover: #27272a;
+  --border: #333338;
+  --foreground: #f4f4f5;
+  --muted: #a3a3a8;
+  --primary: #e5e7eb;
+  --primary-foreground: #18181b;
 }

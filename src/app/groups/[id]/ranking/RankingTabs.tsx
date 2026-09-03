@@ -1,9 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { EmptyState, PageContainer, PageHeader } from "@/components/ui";
+import GroupBottomNav from "@/components/GroupBottomNav";
+import { Avatar, EmptyState, PageContainer } from "@/components/ui";
 
-type Row = { playerId: string; netTotal: number; position: number; label: string };
+type Row = {
+  playerId: string;
+  netTotal: number;
+  position: number;
+  label: string;
+  avatarUrl: string | null;
+};
 
 const TABS = [
   { key: "month", label: "Mês" },
@@ -28,8 +35,11 @@ export default function RankingTabs({
   const data = { month, year, total }[tab];
 
   return (
-    <PageContainer>
-      <PageHeader title="Ranking" backHref={`/groups/${groupId}`} backLabel={`Voltar para ${groupName}`} />
+    <PageContainer bottomNav nav={<GroupBottomNav groupId={groupId} />}>
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">Ranking</h1>
+        <p className="mt-1 text-sm text-muted">{groupName}</p>
+      </div>
 
       <div className="flex gap-2">
         {TABS.map((t) => (
@@ -61,11 +71,12 @@ export default function RankingTabs({
             >
               <span className="flex items-center gap-3">
                 <span className="w-6 text-sm font-semibold text-muted">{r.position}º</span>
+                <Avatar src={r.avatarUrl} name={r.label} />
                 <span className="text-sm text-foreground">{r.label}</span>
               </span>
               <span
                 className={`font-mono text-sm font-medium ${
-                  r.netTotal > 0 ? "text-primary" : r.netTotal < 0 ? "text-danger" : "text-muted"
+                  r.netTotal > 0 ? "text-success" : r.netTotal < 0 ? "text-danger" : "text-muted"
                 }`}
               >
                 {r.netTotal > 0 ? "+" : ""}

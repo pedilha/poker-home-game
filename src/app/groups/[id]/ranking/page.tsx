@@ -45,7 +45,7 @@ export default async function RankingPage({
 
   const { data: participations } = await supabase
     .from("participations")
-    .select("id, match_id, user_id, declared_amount, profiles(display_name, nickname)")
+    .select("id, match_id, user_id, declared_amount, profiles(display_name, nickname, avatar_url)")
     .in("match_id", matchIds.length > 0 ? matchIds : [""])
     .returns<
       {
@@ -53,7 +53,11 @@ export default async function RankingPage({
         match_id: string;
         user_id: string;
         declared_amount: number | null;
-        profiles: { display_name: string; nickname: string | null } | null;
+        profiles: {
+          display_name: string;
+          nickname: string | null;
+          avatar_url: string | null;
+        } | null;
       }[]
     >();
 
@@ -74,7 +78,7 @@ export default async function RankingPage({
   const now = new Date();
 
   function buildRanking(filter: (matchDate: Date | null) => boolean) {
-    const totals = new Map<string, { label: string; net: number }>();
+    const totals = new Map<string, { label: string; avatarUrl: string | null; net: number }>();
 
     for (const p of participations ?? []) {
       const matchDate = closedAtByMatch.get(p.match_id) ?? null;
@@ -83,9 +87,10 @@ export default async function RankingPage({
       const invested = investedByParticipation.get(p.id) ?? 0;
       const net = (p.declared_amount ?? 0) - invested;
       const label = p.profiles?.nickname || p.profiles?.display_name || "Jogador";
+      const avatarUrl = p.profiles?.avatar_url ?? null;
 
-      const current = totals.get(p.user_id) ?? { label, net: 0 };
-      totals.set(p.user_id, { label, net: round2(current.net + net) });
+      const current = totals.get(p.user_id) ?? { label, avatarUrl, net: 0 };
+      totals.set(p.user_id, { label, avatarUrl, net: round2(current.net + net) });
     }
 
     const scores: PlayerScore[] = [...totals.entries()].map(([playerId, t]) => ({
@@ -96,6 +101,7 @@ export default async function RankingPage({
     return rankPlayers(scores).map((r) => ({
       ...r,
       label: totals.get(r.playerId)!.label,
+      avatarUrl: totals.get(r.playerId)!.avatarUrl,
     }));
   }
 

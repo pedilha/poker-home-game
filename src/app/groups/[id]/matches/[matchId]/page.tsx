@@ -2,6 +2,9 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { addBuyInOrRebuy, resetDeclaration } from "./actions";
 import CloseMatchPanel from "./CloseMatchPanel";
+import CopyResultsButton from "./CopyResultsButton";
+import GroupBottomNav from "@/components/GroupBottomNav";
+import { netResult } from "@/lib/poker/reconciliation";
 import { Badge, Button, Card, LinkButton, PageContainer, PageHeader } from "@/components/ui";
 import type { BadgeVariant } from "@/components/ui/Badge";
 
@@ -31,7 +34,7 @@ export default async function MatchPage({
 
   const { data: match } = await supabase
     .from("matches")
-    .select("id, leader_id, status, is_divergent, divergence_amount, buyin_value")
+    .select("id, leader_id, status, is_divergent, divergence_amount, buyin_value, closed_at")
     .eq("id", matchId)
     .maybeSingle();
   if (!match) notFound();
@@ -80,12 +83,51 @@ export default async function MatchPage({
     0,
   );
 
+  const orderedParticipations =
+    match.status === "closed"
+      ? [...(participations ?? [])].sort(
+          (a, b) =>
+            netResult(b.declared_amount ?? 0, investedByParticipation.get(b.id) ?? 0) -
+            netResult(a.declared_amount ?? 0, investedByParticipation.get(a.id) ?? 0),
+        )
+      : (participations ?? []);
+
+  const medals = ["🥇", "🥈", "🥉"];
+
+  const resultText =
+    match.status === "closed"
+      ? [
+          `🃏 ${group.name}`,
+          `📅 Jogatina do dia ${
+            match.closed_at
+              ? new Date(match.closed_at).toLocaleDateString("pt-BR")
+              : new Date().toLocaleDateString("pt-BR")
+          }`,
+          "",
+          ...orderedParticipations.map((p, index) => {
+            const net = netResult(
+              p.declared_amount ?? 0,
+              investedByParticipation.get(p.id) ?? 0,
+            );
+            const name = p.profiles?.nickname || p.profiles?.display_name || "Jogador";
+            const position = medals[index] ?? `${index + 1}º`;
+            const trend = net > 0 ? "📈" : net < 0 ? "📉" : "➖";
+            return `${position} ${name} — ${net > 0 ? "+" : ""}R$ ${net.toFixed(2)} ${trend}`;
+          }),
+        ].join("\n")
+      : "";
+
+  const backHref =
+    match.status === "closed" ? `/groups/${id}/history` : `/groups/${id}`;
+  const backLabel =
+    match.status === "closed" ? "Voltar para o histórico" : `Voltar para ${group.name}`;
+
   return (
-    <PageContainer>
+    <PageContainer bottomNav nav={<GroupBottomNav groupId={id} />}>
       <PageHeader
         title="Partida"
-        backHref={`/groups/${id}`}
-        backLabel={`Voltar para ${group.name}`}
+        backHref={backHref}
+        backLabel={backLabel}
         actions={
           <Badge variant={match.status === "open" ? "success" : "neutral"}>
             {match.status === "open" ? "Aberta" : "Fechada"}
@@ -101,13 +143,17 @@ export default async function MatchPage({
       />
 
       <ul className="space-y-2">
-        {(participations ?? []).map((p) => {
+        {orderedParticipations.map((p, index) => {
           const invested = investedByParticipation.get(p.id) ?? 0;
           const canDeclare = (isLeader || p.user_id === user.id) && match.status === "open";
+          const net = netResult(p.declared_amount ?? 0, invested);
           return (
             <Card as="li" key={p.id} className="space-y-2 p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground">
+                <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  {match.status === "closed" && (
+                    <span className="text-xs font-semibold text-muted">{index + 1}º</span>
+                  )}
                   {p.profiles?.nickname || p.profiles?.display_name}
                 </span>
                 <Badge variant={statusVariant[p.status] ?? "neutral"}>
@@ -121,8 +167,18 @@ export default async function MatchPage({
                     ? ` (${p.rebuys_count} rebuy${p.rebuys_count > 1 ? "s" : ""})`
                     : ""}
                 </span>
-                {p.status === "cashed_out" && (
+                {p.status === "cashed_out" && match.status !== "closed" && (
                   <span>Declarado: R$ {(p.declared_amount ?? 0).toFixed(2)}</span>
+                )}
+                {match.status === "closed" && (
+                  <span
+                    className={
+                      net > 0 ? "text-success" : net < 0 ? "text-danger" : "text-muted"
+                    }
+                  >
+                    {net > 0 ? "+" : ""}
+                    R$ {net.toFixed(2)}
+                  </span>
                 )}
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
@@ -153,6 +209,8 @@ export default async function MatchPage({
           );
         })}
       </ul>
+
+      {match.status === "closed" && <CopyResultsButton text={resultText} />}
 
       {match.status === "open" && (
         <p className="text-center font-mono text-xs text-muted">

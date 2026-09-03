@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Calculator, History, Settings, Trophy } from "lucide-react";
+import { Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { approveMember, rejectMember, removeMember, setMemberRole } from "./actions";
-import { Badge, Button, Card, LinkButton, PageContainer } from "@/components/ui";
+import GroupBottomNav from "@/components/GroupBottomNav";
+import { Avatar, Badge, Button, Card, LinkButton, PageContainer } from "@/components/ui";
 
 export default async function GroupPage({
   params,
@@ -35,13 +37,15 @@ export default async function GroupPage({
 
   if (myMembership.status === "pending") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
-        <h1 className="text-xl font-semibold text-foreground">{group.name}</h1>
-        <p className="mt-2 text-sm text-muted">
-          Sua solicitação de entrada está aguardando aprovação do dono ou de
-          um admin.
-        </p>
-      </div>
+      <PageContainer bottomNav nav={<GroupBottomNav groupId={id} />}>
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <h1 className="text-xl font-semibold text-foreground">{group.name}</h1>
+          <p className="mt-2 text-sm text-muted">
+            Sua solicitação de entrada está aguardando aprovação do dono ou de
+            um admin.
+          </p>
+        </div>
+      </PageContainer>
     );
   }
 
@@ -57,7 +61,7 @@ export default async function GroupPage({
 
   const { data: members } = await supabase
     .from("group_members")
-    .select("user_id, role, status, profiles(display_name, nickname)")
+    .select("user_id, role, status, profiles(display_name, nickname, avatar_url)")
     .eq("group_id", id)
     .order("joined_at")
     .returns<
@@ -65,51 +69,43 @@ export default async function GroupPage({
         user_id: string;
         role: string;
         status: string;
-        profiles: { display_name: string; nickname: string | null } | null;
+        profiles: {
+          display_name: string;
+          nickname: string | null;
+          avatar_url: string | null;
+        } | null;
       }[]
     >();
 
   const approvedMembers = (members ?? []).filter((m) => m.status === "approved");
   const pendingMembers = (members ?? []).filter((m) => m.status === "pending");
 
-  const navTiles = [
-    { href: `/groups/${group.id}/ranking`, label: "Ranking", icon: Trophy },
-    { href: `/groups/${group.id}/history`, label: "Histórico", icon: History },
-    { href: `/groups/${group.id}/calculator`, label: "Calculadora", icon: Calculator },
-    ...(isOwner
-      ? [{ href: `/groups/${group.id}/settings`, label: "Config.", icon: Settings }]
-      : []),
-  ];
-
   return (
-    <PageContainer>
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">{group.name}</h1>
-        <p className="mt-1 text-sm text-muted">
-          Buy-in padrão: R$ {group.default_buyin_value}
-        </p>
-        {isAdmin && (
+    <PageContainer bottomNav nav={<GroupBottomNav groupId={id} />}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">{group.name}</h1>
           <p className="mt-1 text-sm text-muted">
-            Código de entrada:{" "}
-            <span className="font-mono font-semibold text-foreground">
-              {group.entry_code}
-            </span>
+            Buy-in padrão: R$ {group.default_buyin_value}
           </p>
-        )}
-      </div>
-
-      <div className={`grid gap-2 ${navTiles.length === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
-        {navTiles.map((tile) => (
-          <LinkButton
-            key={tile.href}
-            href={tile.href}
-            variant="outline"
-            className="h-auto flex-col gap-1.5 rounded-2xl py-3 text-xs"
+          {isAdmin && (
+            <p className="mt-1 text-sm text-muted">
+              Código de entrada:{" "}
+              <span className="font-mono font-semibold text-foreground">
+                {group.entry_code}
+              </span>
+            </p>
+          )}
+        </div>
+        {isOwner && (
+          <Link
+            href={`/groups/${group.id}/settings`}
+            aria-label="Configurações do grupo"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
           >
-            <tile.icon className="h-4 w-4" aria-hidden="true" />
-            {tile.label}
-          </LinkButton>
-        ))}
+            <Settings className="h-5 w-5" aria-hidden="true" />
+          </Link>
+        )}
       </div>
 
       {openMatch ? (
@@ -132,7 +128,11 @@ export default async function GroupPage({
                 key={m.user_id}
                 className="flex items-center justify-between border-dashed px-4 py-3"
               >
-                <span className="text-sm text-foreground">
+                <span className="flex items-center gap-2 text-sm text-foreground">
+                  <Avatar
+                    src={m.profiles?.avatar_url}
+                    name={m.profiles?.nickname || m.profiles?.display_name || "?"}
+                  />
                   {m.profiles?.nickname || m.profiles?.display_name}
                 </span>
                 <span className="flex gap-2">
@@ -151,16 +151,23 @@ export default async function GroupPage({
         </div>
       )}
 
-      <div className="space-y-2">
-        <h2 className="text-sm font-medium text-muted">Membros</h2>
+      <Card className="space-y-3 p-4">
+        <h2 className="text-sm font-medium text-foreground">Membros</h2>
         <ul className="space-y-2">
           {approvedMembers.map((m) => {
             const canRemove =
               m.role !== "owner" &&
               (isOwner || (myMembership.role === "admin" && m.role === "member"));
             return (
-              <Card as="li" key={m.user_id} className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm text-foreground">
+              <li
+                key={m.user_id}
+                className="flex items-center justify-between rounded-xl bg-surface-hover px-3 py-2"
+              >
+                <span className="flex items-center gap-2 text-sm text-foreground">
+                  <Avatar
+                    src={m.profiles?.avatar_url}
+                    name={m.profiles?.nickname || m.profiles?.display_name || "?"}
+                  />
                   {m.profiles?.nickname || m.profiles?.display_name}
                 </span>
                 <span className="flex items-center gap-2">
@@ -189,11 +196,11 @@ export default async function GroupPage({
                     </form>
                   )}
                 </span>
-              </Card>
+              </li>
             );
           })}
         </ul>
-      </div>
+      </Card>
     </PageContainer>
   );
 }

@@ -2,20 +2,28 @@
 
 import { useMemo, useState } from "react";
 import { totalDeclaredValue } from "@/lib/poker/reconciliation";
-import { Card, EmptyState, PageContainer, PageHeader } from "@/components/ui";
+import { Card, EmptyState, LinkButton, PageContainer, PageHeader } from "@/components/ui";
 
 type Color = { id: string; color_name: string; color_hex: string | null; units: number };
 
-export default function Calculator({
-  groupId,
-  groupName,
+export default function ChipCalculator({
+  title = "Calculadora",
+  subtitle = "Só converte fichas em dinheiro — não afeta ranking ou histórico.",
+  backHref,
+  backLabel,
+  settingsHref,
   chipUnitValue,
   colors,
+  bottomNav = false,
 }: {
-  groupId: string;
-  groupName: string;
+  title?: string;
+  subtitle?: string;
+  backHref?: string;
+  backLabel?: string;
+  settingsHref?: string;
   chipUnitValue: number;
   colors: Color[];
+  bottomNav?: boolean;
 }) {
   const [counts, setCounts] = useState<Record<string, string>>({});
 
@@ -28,18 +36,36 @@ export default function Calculator({
   }, [counts, colors, chipUnitValue]);
 
   return (
-    <PageContainer>
+    <PageContainer bottomNav={bottomNav}>
       <PageHeader
-        title="Calculadora"
-        subtitle="Só converte fichas em dinheiro — não afeta ranking ou histórico."
-        backHref={`/groups/${groupId}`}
-        backLabel={`Voltar para ${groupName}`}
+        title={title}
+        subtitle={subtitle}
+        backHref={backHref}
+        backLabel={backLabel}
+        actions={
+          settingsHref ? (
+            <LinkButton href={settingsHref} variant="outline" size="sm">
+              Editar fichas
+            </LinkButton>
+          ) : undefined
+        }
       />
 
       {colors.length === 0 ? (
         <EmptyState
-          title="Esse grupo ainda não tem cores de fichas configuradas"
-          description="Peça pro dono configurar em Configurações do grupo."
+          title="Nenhuma cor de ficha configurada"
+          description={
+            settingsHref
+              ? "Configure suas cores pra usar a calculadora."
+              : "Peça pro dono configurar em Configurações do grupo."
+          }
+          action={
+            settingsHref ? (
+              <LinkButton href={settingsHref} fullWidth>
+                Configurar fichas
+              </LinkButton>
+            ) : undefined
+          }
         />
       ) : (
         <>

@@ -1,92 +1,53 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import {
-  deleteChipColor,
-  updateBuyinValue,
-  updateChipColor,
-  updateChipUnitValue,
-  updateGroupName,
-} from "./actions";
+import { deleteChipColor, updateChipColor, updateCalculatorUnitValue } from "./actions";
 import AddChipColorForm from "./AddChipColorForm";
-import CoverImageForm from "./CoverImageForm";
 import { Button, Card, Input, PageContainer, PageHeader } from "@/components/ui";
 
-export default async function GroupSettingsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+export default async function CalculatorSettingsPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: group } = await supabase
-    .from("groups")
-    .select("id, name, owner_id, default_buyin_value, chip_unit_value, cover_image_url")
-    .eq("id", id)
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("calculator_unit_value")
+    .eq("id", user.id)
     .maybeSingle();
 
-  if (!group) notFound();
-  if (group.owner_id !== user.id) notFound();
-
   const { data: colors } = await supabase
-    .from("group_chip_colors")
+    .from("calculator_chip_colors")
     .select("id, color_name, color_hex, units")
-    .eq("group_id", id)
+    .eq("user_id", user.id)
     .order("sort_order")
     .returns<
       { id: string; color_name: string; color_hex: string | null; units: number }[]
     >();
 
+  const unitValue = profile?.calculator_unit_value ?? 0.1;
+
   return (
     <PageContainer>
       <PageHeader
-        title="Configurações"
-        subtitle={group.name}
-        backHref={`/groups/${group.id}`}
-        backLabel={`Voltar para ${group.name}`}
+        title="Minhas fichas"
+        subtitle="Config usada só na sua calculadora pessoal."
+        backHref="/calculator"
+        backLabel="Voltar para a calculadora"
       />
 
       <div className="space-y-2">
-        <h2 className="text-sm font-medium text-muted">Capa do grupo</h2>
-        <CoverImageForm groupId={group.id} coverImageUrl={group.cover_image_url} />
-      </div>
-
-      <form action={updateGroupName.bind(null, group.id)} className="flex items-end gap-2">
-        <div className="flex-1">
-          <Input type="text" name="name" label="Nome do grupo" required defaultValue={group.name} />
-        </div>
-        <Button variant="outline">Salvar</Button>
-      </form>
-
-      <form action={updateBuyinValue.bind(null, group.id)} className="flex items-end gap-2">
-        <div className="flex-1">
-          <Input
-            type="text"
-            inputMode="decimal"
-            name="default_buyin_value"
-            label="Buy-in padrão (R$)"
-            required
-            defaultValue={group.default_buyin_value}
-          />
-        </div>
-        <Button variant="outline">Salvar</Button>
-      </form>
-
-      <div className="space-y-2">
-        <form action={updateChipUnitValue.bind(null, group.id)} className="flex items-end gap-2">
+        <form action={updateCalculatorUnitValue} className="flex items-end gap-2">
           <div className="flex-1">
             <Input
               type="text"
               inputMode="decimal"
-              name="chip_unit_value"
+              name="calculator_unit_value"
               label="Valor da unidade (R$)"
               required
-              defaultValue={group.chip_unit_value}
-              hint="Cada cor vale um número de unidades — mude esse valor pra reprecificar o set inteiro de uma vez."
+              defaultValue={unitValue}
+              hint="Cada cor vale um número de unidades — mude esse valor pra reprecificar tudo de uma vez."
             />
           </div>
           <Button variant="outline">Salvar</Button>
@@ -98,10 +59,7 @@ export default async function GroupSettingsPage({
         <ul className="space-y-2">
           {(colors ?? []).map((c) => (
             <Card as="li" key={c.id} className="space-y-2 p-4">
-              <form
-                action={updateChipColor.bind(null, group.id, c.id)}
-                className="flex items-center gap-2"
-              >
+              <form action={updateChipColor.bind(null, c.id)} className="flex items-center gap-2">
                 <input
                   type="color"
                   name="color_hex"
@@ -130,10 +88,9 @@ export default async function GroupSettingsPage({
               </form>
               <div className="flex items-center justify-between px-1">
                 <span className="text-xs text-muted">
-                  {c.units} un × R$ {group.chip_unit_value} = R${" "}
-                  {(c.units * group.chip_unit_value).toFixed(2)}
+                  {c.units} un × R$ {unitValue} = R$ {(c.units * unitValue).toFixed(2)}
                 </span>
-                <form action={deleteChipColor.bind(null, group.id, c.id)}>
+                <form action={deleteChipColor.bind(null, c.id)}>
                   <button className="cursor-pointer text-xs text-danger transition-colors hover:underline">
                     Remover
                   </button>
@@ -146,7 +103,7 @@ export default async function GroupSettingsPage({
 
       <div className="space-y-2">
         <h2 className="text-sm font-medium text-muted">Adicionar cor</h2>
-        <AddChipColorForm groupId={group.id} />
+        <AddChipColorForm />
       </div>
     </PageContainer>
   );

@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import Calculator from "./Calculator";
+import ChipCalculator from "@/components/ChipCalculator";
 
 export default async function CalculatorPage({
   params,
@@ -39,9 +39,9 @@ export default async function CalculatorPage({
     >();
 
   return (
-    <Calculator
-      groupId={id}
-      groupName={group.name}
+    <ChipCalculator
+      backHref={`/groups/${id}`}
+      backLabel={`Voltar para ${group.name}`}
       chipUnitValue={group.chip_unit_value}
       colors={colors ?? []}
     />

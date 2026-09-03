@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { createGroup, type CreateGroupState } from "./actions";
 import { Button, Input } from "@/components/ui";
 
@@ -11,7 +13,14 @@ export default function NewGroupPage() {
   );
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4">
+    <div className="relative flex flex-1 flex-col items-center justify-center px-4">
+      <Link
+        href="/groups/add"
+        aria-label="Voltar"
+        className="absolute left-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+      >
+        <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+      </Link>
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-semibold text-foreground">Criar grupo</h1>
