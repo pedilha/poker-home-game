@@ -23,12 +23,13 @@ export default async function DeclarePage({
 
   const { data: participation } = await supabase
     .from("participations")
-    .select("id, user_id, profiles(display_name, nickname)")
+    .select("id, user_id, rebuys_count, profiles(display_name, nickname)")
     .eq("id", participationId)
     .returns<
       {
         id: string;
         user_id: string;
+        rebuys_count: number;
         profiles: { display_name: string; nickname: string | null } | null;
       }[]
     >()
@@ -71,6 +72,7 @@ export default async function DeclarePage({
         participation.profiles?.nickname || participation.profiles?.display_name || "Jogador"
       }
       colors={colors}
+      rebuysCount={participation.rebuys_count}
     />
   );
 }

@@ -8,40 +8,6 @@ import {
   reconcileMatch,
 } from "@/lib/poker/reconciliation";
 
-export async function addBuyInOrRebuy(
-  groupId: string,
-  matchId: string,
-  participationId: string,
-) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { count } = await supabase
-    .from("buyins_rebuys")
-    .select("id", { count: "exact", head: true })
-    .eq("participation_id", participationId);
-  const type = (count ?? 0) === 0 ? "buy_in" : "rebuy";
-
-  const { data: match } = await supabase
-    .from("matches")
-    .select("buyin_value")
-    .eq("id", matchId)
-    .maybeSingle();
-  if (!match) return;
-
-  await supabase.from("buyins_rebuys").insert({
-    participation_id: participationId,
-    type,
-    amount: match.buyin_value,
-    created_by: user.id,
-  });
-
-  revalidatePath(`/groups/${groupId}/matches/${matchId}`);
-}
-
 export type CloseMatchResult =
   | { closed: true }
   | {

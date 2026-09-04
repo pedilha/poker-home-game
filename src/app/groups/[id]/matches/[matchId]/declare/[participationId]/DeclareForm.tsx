@@ -10,12 +10,14 @@ export default function DeclareForm({
   participationId,
   playerLabel,
   colors,
+  rebuysCount,
 }: {
   groupId: string;
   matchId: string;
   participationId: string;
   playerLabel: string;
   colors: { id: string; color_name: string; color_hex: string | null; chipCount: number }[];
+  rebuysCount: number;
 }) {
   const [state, formAction, pending] = useActionState<DeclareState, FormData>(
     declareCashOut.bind(null, groupId, matchId, participationId),
@@ -55,6 +57,21 @@ export default function DeclareForm({
             </div>
           );
         })}
+
+        <div className="flex items-center gap-3">
+          <label htmlFor="rebuys" className="w-24 shrink-0 text-sm text-foreground">
+            Rebuys
+          </label>
+          <input
+            id="rebuys"
+            type="text"
+            inputMode="numeric"
+            name="rebuys"
+            defaultValue={rebuysCount || ""}
+            placeholder="0"
+            className="h-11 w-full rounded-2xl border border-border bg-surface px-4 text-sm text-foreground outline-none focus:border-primary"
+          />
+        </div>
 
         {state.error ? <p className="text-center text-sm text-danger">{state.error}</p> : null}
 

@@ -12,13 +12,14 @@ Jogadores de home game erram na hora de dividir o dinheiro ao final da partida �
 
 ## Funcionalidades
 
-- **Grupos**: criação, entrada por código com aprovação de dono/admin, papéis (dono/admin/membro)
+- **Grupos**: criação, entrada por código com aprovação de dono/admin, papéis (dono/admin/membro), foto de capa e edição de nome
 - **Configuração de fichas por grupo**: cada cor vale um número de *unidades*; existe um valor de unidade único que reprecifica o set inteiro de uma vez
-- **Partidas**: snapshot imutável da config de fichas no momento da criação (edições futuras no grupo nunca reescrevem partidas já criadas), buy-in/rebuy registrados pelo líder, declaração de fichas com conversão automática (pelo líder ou pelo próprio jogador)
-- **Conciliação**: ao fechar a partida, se o total declarado não bate com o investido, o líder vê a diferença e escolhe entre corrigir as declarações ou aplicar uma **correção proporcional** (`total investido ÷ total declarado`, preservando quem ganhou/perdeu mais)
-- **Ranking**: saldo líquido acumulado por jogador, abas mês/ano/total, desempate por *standard competition ranking* (empatados dividem posição — 1º, 2º, 2º, 4º)
-- **Histórico** de partidas fechadas, com flag de divergência
-- **Calculadora avulsa**: converte fichas em dinheiro sem afetar ranking/histórico
+- **Partidas**: snapshot imutável da config de fichas no momento da criação (edições futuras no grupo nunca reescrevem partidas já criadas); cada jogador faz seu próprio cálculo de fichas ao final (fichas declaradas + rebuys que deu — o buy-in inicial é implícito), e o líder pode editar o cálculo de qualquer jogador
+- **Conciliação**: ao fechar a partida, se o total declarado não bate com o investido, o líder vê a diferença e escolhe entre corrigir as declarações ou aplicar uma **correção proporcional** (`total investido ÷ total declarado`, preservando quem ganhou/perdeu mais); ao fechar, o líder também vê quanto precisa enviar pra cada jogador
+- **Ranking**: saldo líquido acumulado por jogador (com foto), abas mês/ano/total, desempate por *standard competition ranking* (empatados dividem posição — 1º, 2º, 2º, 4º)
+- **Histórico** de partidas fechadas, com flag de divergência, resultado ordenado por saldo e botão de copiar resumo formatado pro WhatsApp
+- **Calculadora avulsa**: converte fichas em dinheiro sem afetar ranking/histórico — tanto por grupo quanto uma versão pessoal com cores próprias
+- **Perfil**: nome, apelido, foto, e 6 temas de cor combinados com modo claro/escuro (persistidos por usuário)
 
 ## Decisões técnicas
 
@@ -45,7 +46,13 @@ npm run dev
 
 Abra [http://localhost:3000](http://localhost:3000).
 
-As migrations em [`supabase/migrations`](supabase/migrations) precisam ser aplicadas no seu projeto Supabase (via SQL Editor ou `supabase db push`) antes do app funcionar. [`supabase/seed.sql`](supabase/seed.sql) tem dados de teste para desenvolvimento local com `supabase start` (requer Docker).
+As migrations em [`supabase/migrations`](supabase/migrations) precisam ser aplicadas no seu projeto Supabase (via SQL Editor ou `supabase db push`) antes do app funcionar, na ordem dos arquivos.
+
+## Conta de demonstração
+
+[`supabase/seed.sql`](supabase/seed.sql) cria um grupo de exemplo ("Sexta do Pedro") com 4 jogadores e uma partida fechada com divergência já conciliada — dá pra ver ranking, histórico e o fluxo de correção proporcional sem montar nada do zero. Funciona tanto local (`supabase start`, requer Docker) quanto rodando uma vez no SQL Editor do projeto Supabase do deploy — é só um insert, não mexe em nada que já existe.
+
+Login: `pedro@example.com` (dono do grupo) / senha `password123` — os outros três jogadores (`tarcisio@`, `chris@`, `vitor@example.com`) usam a mesma senha.
 
 ## Scripts
 
@@ -58,4 +65,4 @@ As migrations em [`supabase/migrations`](supabase/migrations) precisam ser aplic
 
 ## Status
 
-Em desenvolvimento ativo. Fases 0–5 do roadmap completas (fundação, schema/RLS, autenticação e grupos, partidas e conciliação, ranking/histórico, calculadora). Em andamento: polimento de UI/UX. Detalhe fase a fase em [`docs/especificacao.md`](docs/especificacao.md#11-roadmap-de-implementação-do-zero-ao-deploy).
+Fases 0–6 do roadmap completas (fundação, schema/RLS, autenticação e grupos, partidas e conciliação, ranking/histórico, calculadora, polimento de UI/UX com design system, temas e conta de demonstração). Detalhe fase a fase em [`docs/especificacao.md`](docs/especificacao.md#11-roadmap-de-implementação-do-zero-ao-deploy).

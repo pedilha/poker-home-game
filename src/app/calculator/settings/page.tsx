@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { deleteChipColor, updateChipColor, updateCalculatorUnitValue } from "./actions";
 import AddChipColorForm from "./AddChipColorForm";
-import { Button, Card, Input, PageContainer, PageHeader } from "@/components/ui";
+import { Button, Card, EmptyState, Input, PageContainer, PageHeader } from "@/components/ui";
 
 export default async function CalculatorSettingsPage() {
   const supabase = await createClient();
@@ -56,6 +56,12 @@ export default async function CalculatorSettingsPage() {
 
       <div className="space-y-2">
         <h2 className="text-sm font-medium text-muted">Cores de fichas</h2>
+        {(colors ?? []).length === 0 && (
+          <EmptyState
+            title="Nenhuma cor configurada"
+            description="Adicione uma cor abaixo pra voltar a usar a calculadora."
+          />
+        )}
         <ul className="space-y-2">
           {(colors ?? []).map((c) => (
             <Card as="li" key={c.id} className="space-y-2 p-4">

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
+import { Calculator } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { addBuyInOrRebuy, resetDeclaration } from "./actions";
+import { resetDeclaration } from "./actions";
 import CloseMatchPanel from "./CloseMatchPanel";
 import CopyResultsButton from "./CopyResultsButton";
 import GroupBottomNav from "@/components/GroupBottomNav";
@@ -122,6 +123,8 @@ export default async function MatchPage({
   const backLabel =
     match.status === "closed" ? "Voltar para o histórico" : `Voltar para ${group.name}`;
 
+  const myParticipation = (participations ?? []).find((p) => p.user_id === user.id);
+
   return (
     <PageContainer bottomNav nav={<GroupBottomNav groupId={id} />}>
       <PageHeader
@@ -145,7 +148,6 @@ export default async function MatchPage({
       <ul className="space-y-2">
         {orderedParticipations.map((p, index) => {
           const invested = investedByParticipation.get(p.id) ?? 0;
-          const canDeclare = (isLeader || p.user_id === user.id) && match.status === "open";
           const net = netResult(p.declared_amount ?? 0, invested);
           return (
             <Card as="li" key={p.id} className="space-y-2 p-4">
@@ -181,34 +183,67 @@ export default async function MatchPage({
                   </span>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {isLeader && p.status === "playing" && match.status === "open" && (
-                  <form action={addBuyInOrRebuy.bind(null, id, matchId, p.id)}>
-                    <Button variant="outline" size="sm">
-                      {invested === 0 ? "Buy-in" : "Rebuy"}
-                    </Button>
-                  </form>
-                )}
-                {canDeclare && (
+              {isLeader && match.status === "open" && (
+                <div className="flex flex-wrap gap-2 pt-1">
                   <LinkButton
                     href={`/groups/${id}/matches/${matchId}/declare/${p.id}`}
+                    variant="outline"
                     size="sm"
                   >
-                    {p.status === "cashed_out" ? "Editar declaração" : "Declarar"}
+                    Editar
                   </LinkButton>
-                )}
-                {isLeader && p.status === "cashed_out" && match.status === "open" && (
-                  <form action={resetDeclaration.bind(null, id, matchId, p.id)}>
-                    <Button variant="danger" size="sm">
-                      Resetar declaração
-                    </Button>
-                  </form>
-                )}
-              </div>
+                  {p.status === "cashed_out" && (
+                    <form action={resetDeclaration.bind(null, id, matchId, p.id)}>
+                      <Button variant="danger" size="sm">
+                        Resetar declaração
+                      </Button>
+                    </form>
+                  )}
+                </div>
+              )}
             </Card>
           );
         })}
       </ul>
+
+      {myParticipation && match.status === "open" && (
+        <LinkButton
+          href={`/groups/${id}/matches/${matchId}/declare/${myParticipation.id}`}
+          fullWidth
+        >
+          <Calculator className="h-4 w-4" aria-hidden="true" />
+          {myParticipation.status === "cashed_out"
+            ? "Editar meu cálculo"
+            : "Fazer cálculo das fichas"}
+        </LinkButton>
+      )}
+
+      {match.status === "closed" && isLeader && (
+        <Card className="space-y-2 p-4">
+          <p className="text-sm font-medium text-foreground">Pagamentos a fazer</p>
+          {(() => {
+            const payouts = orderedParticipations.filter(
+              (p) => p.user_id !== user.id && (p.declared_amount ?? 0) > 0,
+            );
+            if (payouts.length === 0) {
+              return <p className="text-xs text-muted">Nenhum pagamento pendente.</p>;
+            }
+            return (
+              <ul className="space-y-1.5">
+                {payouts.map((p) => (
+                  <li
+                    key={p.id}
+                    className="flex items-center justify-between font-mono text-sm text-foreground"
+                  >
+                    <span>{p.profiles?.nickname || p.profiles?.display_name}</span>
+                    <span>R$ {(p.declared_amount ?? 0).toFixed(2)}</span>
+                  </li>
+                ))}
+              </ul>
+            );
+          })()}
+        </Card>
+      )}
 
       {match.status === "closed" && <CopyResultsButton text={resultText} />}
 

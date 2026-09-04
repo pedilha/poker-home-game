@@ -14,6 +14,10 @@ export async function declareCashOut(
   formData: FormData,
 ): Promise<DeclareState> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sessão expirada. Faça login novamente." };
 
   const { data: snapshot } = await supabase
     .from("match_chip_snapshot")
@@ -21,7 +25,7 @@ export async function declareCashOut(
     .eq("match_id", matchId);
   const { data: match } = await supabase
     .from("matches")
-    .select("chip_unit_value")
+    .select("chip_unit_value, buyin_value")
     .eq("id", matchId)
     .maybeSingle();
 
@@ -36,6 +40,13 @@ export async function declareCashOut(
 
   if (rows.some((r) => !Number.isFinite(r.chipCount) || r.chipCount < 0)) {
     return { error: "Quantidade de fichas inválida." };
+  }
+
+  const rawRebuys = formData.get("rebuys");
+  const rebuys =
+    typeof rawRebuys === "string" && rawRebuys.trim() !== "" ? Number(rawRebuys) : 0;
+  if (!Number.isInteger(rebuys) || rebuys < 0) {
+    return { error: "Quantidade de rebuys inválida." };
   }
 
   const declaredAmount = totalDeclaredValue(
@@ -55,12 +66,24 @@ export async function declareCashOut(
     );
   }
 
+  await supabase.from("buyins_rebuys").delete().eq("participation_id", participationId);
+  await supabase.from("buyins_rebuys").insert([
+    { participation_id: participationId, type: "buy_in", amount: match.buyin_value, created_by: user.id },
+    ...Array.from({ length: rebuys }, () => ({
+      participation_id: participationId,
+      type: "rebuy" as const,
+      amount: match.buyin_value,
+      created_by: user.id,
+    })),
+  ]);
+
   const { error } = await supabase
     .from("participations")
     .update({
       status: "cashed_out",
       declared_amount: declaredAmount,
       declared_at: new Date().toISOString(),
+      rebuys_count: rebuys,
     })
     .eq("id", participationId);
 
